@@ -35,7 +35,7 @@ int main() {
 	{
 		string s;
 		while (cin >> s) {
-			auto pos = s.find('-');
+			auto pos{s.find('-')};
 			auto s1{s.substr(0, pos)}, s2{s.substr(pos + 1)};
 			if (!(s2 == "start" || s1 == "end")) {
 				edge_list[s1].PB(s2);
