@@ -30,27 +30,35 @@ using memo_t = map<state_t, ll>;
 
 constexpr int EMPTY{-1};
 
-constexpr state_t empty_state_init() {
+constexpr state_t dest_state_init() {
 	state_t state;
 	auto &[hallway, sides] = state;
-	fill(begin(hallway), end(hallway), EMPTY);
-	for (auto &side : sides) {
-		fill(begin(side), end(side), EMPTY);
+	fill(hallway.begin(), hallway.end(), EMPTY);
+	for (szt i{0}; i < sides.size(); ++i) {
+		fill(sides[i].begin(), sides[i].end(), i);
 	}
 	return state;
 }
 
-constexpr state_t EMPTY_STATE{empty_state_init()};
+constexpr state_t EMPTY_STATE{[]() constexpr {
+	state_t state;
+	auto &[hallway, sides] = state;
+	fill(hallway.begin(), hallway.end(), EMPTY);
+	for (auto &side : sides) {
+		fill(side.begin(), side.end(), EMPTY);
+	}
+	return state;
+}()};
 
-constexpr state_t DEST_STATE{
-	{{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY}},
-	{{
-		{0, 0, 0, 0},
-		{1, 1, 1, 1},
-		{2, 2, 2, 2},
-		{3, 3, 3, 3}
-	}}
-};
+constexpr state_t DEST_STATE{[]() constexpr{
+	state_t state;
+	auto &[hallway, sides] = state;
+	fill(hallway.begin(), hallway.end(), EMPTY);
+	for (szt i{0}; i < sides.size(); ++i) {
+		fill(sides[i].begin(), sides[i].end(), i);
+	}
+	return state;
+}()};
 
 inline bool is_dest_state(const state_t &state) {
 	return state.second == DEST_STATE.second;
