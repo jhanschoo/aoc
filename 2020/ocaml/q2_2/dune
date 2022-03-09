@@ -1,0 +1,4 @@
+(executable
+ (name      q2_2)
+ (preprocess (pps ppx_let))
+ (libraries base stdio))
