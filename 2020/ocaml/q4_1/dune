@@ -1,0 +1,3 @@
+(executable
+ (name      q4_1)
+ (libraries base core stdio))
