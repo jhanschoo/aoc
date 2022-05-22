@@ -1,0 +1,3 @@
+(executable
+ (name      q5_2)
+ (libraries core))
