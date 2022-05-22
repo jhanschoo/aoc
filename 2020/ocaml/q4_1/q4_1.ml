@@ -20,10 +20,10 @@ let filter_cid passport =
   passport
   |> List.filter ~f:(fun field -> not (String.is_prefix ~prefix:"cid:" field))
 
-
 let () = Stdio.In_channel.input_lines Stdio.stdin
     |> lines_to_passport_fields
     |> List.map ~f:(filter_cid)
     |> List.filter ~f:(fun passport -> List.length passport >= 7)
     |> List.length
     |> printf "%d\n"
+
