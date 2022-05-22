@@ -26,4 +26,3 @@ let () = Stdio.In_channel.input_lines Stdio.stdin
     |> List.filter ~f:(fun passport -> List.length passport >= 7)
     |> List.length
     |> printf "%d\n"
-
