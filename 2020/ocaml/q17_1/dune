@@ -1,0 +1,3 @@
+(executable
+ (name      q17_1)
+ (libraries core))
