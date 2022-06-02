@@ -1,11 +1,21 @@
 open Core
-exception Exit
+exception Exit;;
 
-let list_to_set (l : (int * (int * int)) list) = Set.of_list (module Tuple.Comparator (Int) (Tuple.Comparator (Int) (Int))) l
+Set.of_list (module Int);;
 
-let process_map line = List.foldi line ~init:[] ~f:(fun i l r -> String.foldi r ~init:l ~f:(fun j l c -> if Char.(c = '#') then (i,j,0) :: l else l))
+module Int_tuple_comparator = struct
+  module T = struct
+    type t = Int.t * Int.t * Int.t
+    let compare = Tuple3.compare ~cmp1:Int.compare ~cmp2:Int.compare ~cmp3:Int.compare
+    let sexp_of_t = Tuple3.sexp_of_t Int.sexp_of_t Int.sexp_of_t Int.sexp_of_t
+  end
+  include T
+  include Comparator.Make (T)
+end;;
+
+let process_map line = List.foldi line ~init:[] ~f:(fun i l r -> String.foldi r ~init:l ~f:(fun j l c -> if Char.(c = '#') then Tuple.T3.create i j 0 :: l else l))
 
 let () = Stdio.In_channel.input_lines Stdio.stdin
   |> process_map
-  |> Set.of_list (module (Tuple (module Int)))
-  |> printf "%d\n"
+  |> Set.of_list (module Int_tuple_comparator)
+  |> (fun _ -> ())
