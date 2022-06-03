@@ -1,4 +1,4 @@
 (executable
- (name      q18_1)
+ (name      q9_1)
  (preprocess (pps ppx_jane ppx_let))
  (libraries core))
