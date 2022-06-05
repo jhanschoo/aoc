@@ -1,0 +1,4 @@
+(executable
+ (name      q18_2)
+ (preprocess (pps ppx_jane))
+ (libraries core))
