@@ -96,6 +96,7 @@ let process_with_result res =
   let nearby_tickets = List.filter nearby_tickets ~f:(fun ticket -> valid_ticket ticket ~rules) in
   let%bind values_by_field_pos = Result.of_option (List.transpose nearby_tickets) ~error:"invalid transposition" in
   let rules_valid_pos = Map.fold rules ~init:(Map.empty (module Int_string_tuple)) ~f:(fun ~key ~data:rule accum -> positions_for_rule accum rule ~values_by_field_pos ~key) in
+  (* note that there are more efficient methods (e.g. toposort for resolution, but this works well enough) *)
   let known = resolve_rules_valid_pos rules_valid_pos ~known:(Map.empty (module String)) in
   let answer = obtain_answer your_ticket ~known in
   Ok (printf "Answer: %d\n" answer)
