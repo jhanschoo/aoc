@@ -1,77 +1,56 @@
 open Core
+exception Illegal_input of string list
+exception Illegal_argument
 
-let trans_m4 =
-  [|
-    [|1; 0; -4|];
-    [|0; 1; -4|];
-    [|0; 0; 1|]
-  |]
+let parse_info info = Int.of_string (String.drop_prefix (String.drop_suffix info 1) 5)
 
-let trans_p4 =
-  [|
-    [|1; 0; 4|];
-    [|0; 1; 4|];
-    [|0; 0; 1|]
-  |]
+let hash_border =
+  let f prev = function
+    | '.' -> prev * 2
+    | '#' -> prev * 2 + 1
+    | _ -> raise Illegal_argument
+  in
+  List.fold ~init:0 ~f
 
-let m_mul m1 m2 =
-  let dimx = Array.length m1
-  and dimy = Array.length (m2.(0)) in
-  let r = Array.make_matrix ~dimx:(Array.length m1) ~dimy:(Array.length (m2.(0))) 0 in
-  for x = 0 to dimx - 1 do
-    for y = 0 to dimy - 1 do
-      let f t = m1.(x).(t) * m2.(t).(y) in
-      let s = List.sum (module Int) (List.range 0 (Array.length m2)) ~f in
-      r.(x).(y) <- s
-    done
-  done;
-  r
+let register_border_hash m hash tile_id =
+  Map.update m hash ~f:(function Some l -> tile_id::l | None -> [tile_id])
 
-let mv_mul m v =
-  let r = Array.create ~len:(Array.length m) 0 in
-  for i = 0 to Array.length v - 1 do
-    let f t = m.(t).(i) * v.(t) in
-    let sum = List.sum (module Int) (List.range 0 (Array.length v)) ~f in
-    r.(i) <- sum
-  done;
-  r
+let register_border m border tile_id =
+  register_border_hash m (hash_border (List.rev border)) tile_id
 
-let apply_trf img trf =
-  let r = Array.copy_matrix img in
-  let dimx = Array.length img
-  and dimy = Array.length (img.(0)) in
-  for x = 0 to dimx - 1 do
-    for y = 0 to dimy - 1 do
-      let xy = mv_mul trf [|x;y;1|] in
-      r.(xy.(0)).(xy.(1)) <- img.(x).(y)
-    done
-  done;
-  r
+let register_tile m (tile_id, tile) =
+  let m = register_border m (String.to_list tile.(0)) tile_id in
+  let m = register_border m (String.to_list_rev tile.(0)) tile_id in
+  let m = register_border m (String.to_list tile.(9)) tile_id in
+  let m = register_border m (String.to_list_rev tile.(9)) tile_id in
+  let right = Array.fold tile ~init:[] ~f:(fun acc s -> String.get s 9 :: acc) in
+  let m = register_border m right tile_id in
+  let m = register_border m (List.rev right) tile_id in
+  let left = Array.fold tile ~init:[] ~f:(fun acc s -> String.get s 0 :: acc) in
+  let m = register_border m left tile_id in
+  let m = register_border m (List.rev left) tile_id in
+  m
 
-let r1 =
-  [|
-    [|0; -1; 0|];
-    [|1; 0; 0|];
-    [|0; 0; 1|]
-  |]
-
-let r2 = m_mul r1 r1
-let r3 = m_mul r1 r2
-let r0 = m_mul r1 r3
-
-let s0 =
-  [|
-    [|1; 0; 0|];
-    [|0; -1; 0|];
-    [|0; 0; 1|]
-  |]
-let s1 = m_mul r1 s0
-let s2 = m_mul r2 s0
-let s3 = m_mul r3 s0
-
-let [@warning "-8"] [r0;r1;r2;r3;s0;s1;s2;s3] = List.map [r0;r1;r2;r3;s0;s1;s2;s3] ~f:(fun t -> m_mul trans_p4 (m_mul t trans_m4));;
+let rec parse_lines = function
+  | "" :: rest -> parse_lines rest
+  | info :: l1 :: l2 :: l3 :: l4 :: l5 :: l6 :: l7 :: l8 :: l9 :: l10 :: rest ->
+    let tile = Array.of_list [l1; l2; l3; l4; l5; l6; l7; l8; l9; l10] in
+    (parse_info info, tile) :: parse_lines rest
+  | [] -> []
+  | (_ as input) -> raise (Illegal_input input)
 
 let () =
-  let _res = Stdio.In_channel.input_lines Stdio.stdin in
-  List.iter [r0;r1;r2;r3;s0;s1;s2;s3] ~f:(fun m -> printf "%s\n\n" (Sexp.to_string_hum (Array.sexp_of_t (Array.sexp_of_t Int.sexp_of_t) m)))
-  
+  let lines = Stdio.In_channel.input_lines Stdio.stdin in
+  let tiles = parse_lines lines in
+  let m = Map.empty (module Int) in
+  let m = List.fold ~init:m ~f:register_tile tiles in
+  let f ~key:_ ~data rev_m =
+    (match data with
+      | [tile_id] -> Map.update rev_m tile_id ~f:(function Some i -> i + 1 | None -> 1)
+      | _ -> rev_m
+    ) in
+  let rev_m = Map.fold m ~init:(Map.empty (module Int)) ~f in
+  let rev_m = Map.filter rev_m ~f:(fun v -> v = 4) in
+  let total = Map.fold rev_m ~init:1 ~f:(fun ~key ~data:_ acc -> acc * key) in
+  printf "%d\n" total
+  (* Map.iteri rev_m ~f:(fun ~key ~data -> printf "%d %d\n" key data) *)
