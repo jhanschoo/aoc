@@ -4,7 +4,7 @@ module T = struct
   type t =
     | E | A | A2 | A3
     | B | BA | BA2 | BA3
-    [@@deriving compare, equal, sexp_of]
+    [@@deriving compare, equal, sexp_of, variants]
 end
 include T
 include Comparator.Make(T)
@@ -33,8 +33,14 @@ let cps t u =
     | A, B | A2, BA | A3, BA2 | B, A3 | BA, A2 | BA2, A -> BA3
   )
 
-let a_of = (cps A)
-let b_of = (cps B)
-let right_of = (cps A)
-
-let trans_opp_of = (cps BA2)
+let all =
+  let add acc var = var.Variantslib.Variant.constructor :: acc in
+  Variants.fold ~init:[]
+    ~e:add
+    ~a:add
+    ~a2:add
+    ~a3:add
+    ~b:add
+    ~ba:add
+    ~ba2:add
+    ~ba3:add
