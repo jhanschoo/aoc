@@ -1,44 +1,38 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <string>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
-
-constexpr size_t num_stacks = 9;
+#include <range/v3/all.hpp>
 
 int main() {
 	std::string line;
-	std::array<std::vector<char>, num_stacks> stacks;
+    auto schematic = std::vector<std::string>{};
 	while (std::getline(std::cin, line)) {
+        // if we have reached the stack index numbers
 		if (line.size() >= 2 && line[1] == '1') {
 			break;
-		}
-		for (size_t i = 0; i * 4 + 1 < line.size(); ++i) {
-			auto c = line[i * 4 + 1];
-			if (c != ' ') {
-				stacks[i].push_back(c);
-			}
-		}
+		} else {
+            schematic.push_back(line);
+        }
 	}
-	for (auto &&stack : stacks) {
-		std::ranges::reverse(stack);
-	}
+    auto stacks = std::vector<std::vector<char>>((line.size() + 2) / 4);
+    for (const auto &row : schematic | ranges::view::reverse) {
+        auto crates = row | ranges::view::drop(1) | ranges::view::stride(4);
+        ranges::accumulate(crates, stacks.begin(), [](auto& sit, const auto& crate) {
+            if (crate != ' ') {
+                sit->push_back(crate);
+            }
+            return ++sit;
+        });
+    }
 	std::string s1, s2, s3;
 	size_t count, from, to;
 	while (std::cin >> s1 >> count >> s2 >> from >> s3 >> to) {
 		--from; --to;
-		for (size_t i = 0; i < count; ++i) {
-			stacks[to].push_back(stacks[from].back());
-			stacks[from].pop_back();
-		}
+        for ([[maybe_unused]] auto&& i : ranges::iota_view{static_cast<std::size_t>(0), count}) {
+            stacks[to].push_back(stacks[from].back());
+            stacks[from].pop_back();
+        }
 	}
 	for (auto &&stack : stacks) {
-		if (stack.empty()) {
-			std::cout << ' ';
-		} else {
-			std::cout << stack.back();
-		}
+        std::cout << (stack.empty() ? ' ' : stack.back());
 	}
 	std::cout << std::endl;
 }
