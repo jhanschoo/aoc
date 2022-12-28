@@ -9,10 +9,11 @@ int main() {
     auto maximum = 0, current = 0;
     auto s = string{};
 	while (getline(cin, s)) {
-		if (s.size()) {
-			current += stoi(s);
-            maximum = max(current, maximum);
+        if (s.empty()) {
+            current = 0;
 		} else {
+            current += stoi(s);
+            maximum = max(current, maximum);
 			current = 0;
 		}
 	}
