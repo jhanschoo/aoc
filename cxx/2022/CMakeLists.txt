@@ -4,11 +4,17 @@ set(source_dirs 1.1
 
 foreach(source_dir IN LISTS source_dirs)
     add_executable(AOC2022_${source_dir} "${source_dir}/main.cxx")
-    target_link_libraries(AOC2022_${source_dir} PUBLIC tutorial_compiler_flags)
+    target_link_libraries(AOC2022_${source_dir} PUBLIC ${aoc_default_libs})
 
     add_test(NAME AOC2022_${source_dir}_diagnostic
-            COMMAND sh "${HARNESS_FILE}" "$<TARGET_FILE:AOC2022_${source_dir}>" "${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/diagnostic.txt")
+            COMMAND sh
+            "${HARNESS_FILE}"
+            "$<TARGET_FILE:AOC2022_${source_dir}>" "${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/diagnostic.txt"
+            )
 
     add_test(NAME AOC2022_${source_dir}_test
-            COMMAND sh "${HARNESS_FILE}" "$<TARGET_FILE:AOC2022_${source_dir}>" "${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/diagnostic.txt")
+            COMMAND sh
+            "${HARNESS_FILE}" "$<TARGET_FILE:AOC2022_${source_dir}>"
+            "${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/input.txt"
+            )
 endforeach()
