@@ -18,7 +18,7 @@ int main() {
 	vector<tuple<int, int, int>> processed;
 	for (int i{0}; i < 14; ++i) {
 		int zi, xi, yi;
-		// input is preprocessed to be last numbers of lines
+		// input.txt is preprocessed to be last numbers of lines
 		//   div z {zi} (4th line after inp w)
 		//   add x {xi} (5th line after inp w)
 		//   add y {yi} (15th line after inp w)
