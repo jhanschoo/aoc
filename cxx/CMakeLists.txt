@@ -7,4 +7,11 @@ add_library(tutorial_compiler_flags INTERFACE)
 target_compile_features(tutorial_compiler_flags INTERFACE cxx_std_20)
 target_compile_options(tutorial_compiler_flags INTERFACE "-Wall")
 
+set(HARNESS_FILE "${CMAKE_BINARY_DIR}/harness.sh")
+file(WRITE "${HARNESS_FILE}" "exec $1 < $2\n")
+
+
+include(CTest)
+
+
 add_subdirectory(2022)
