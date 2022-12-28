@@ -25,6 +25,5 @@ int main() {
 	while (cin.peek() != '\n') {
 		cin >> s;
 		map.PB(s);
-		// TODO
 	}
 }
