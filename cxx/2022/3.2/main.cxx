@@ -1,8 +1,4 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
 
 constexpr auto char_to_priority(char c) {
 	if (c <= 'Z') {
@@ -12,8 +8,8 @@ constexpr auto char_to_priority(char c) {
 }
 
 int main() {
-	std::string s1, s2, s3;
-	int sum = 0;
+    auto s1 = std::string{}, s2 = std::string{}, s3 = std::string{};
+	auto sum = 0;
 	while (std::cin >> s1 >> s2 >> s3) {
 		std::ranges::sort(s1);
 		std::ranges::sort(s2);
