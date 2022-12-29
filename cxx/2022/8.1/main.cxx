@@ -1,54 +1,44 @@
 #include <bits/stdc++.h>
+#include <range/v3/all.hpp>
 
 int main() {
-	std::vector<std::string> treemap;
+	std::vector<std::string> chart_strs;
 	std::string line;
 	while (std::cin >> line) {
-		treemap.push_back(line);
+        chart_strs.push_back(line);
 	}
-	auto num_rows = treemap.size();
-	auto num_cols = treemap[0].size();
-	std::vector<std::vector<bool>> visible;
-	for (size_t i = 0; i < num_rows; ++i) {
-		visible.push_back(std::vector<bool>(num_cols, false));
-	}
-	for (size_t i = 0; i < num_rows; ++i) {
-		int max_height = -1;
-		for (size_t j = 0; j < num_cols; ++j) {
-			if (treemap[i][j] > max_height) {
-				max_height = treemap[i][j];
-				visible[i][j] = true;
-			}
-		}
-		max_height = -1;
-		for (size_t j = num_cols; j > 0; --j) {
-			if (treemap[i][j-1] > max_height) {
-				max_height = treemap[i][j-1];
-				visible[i][j-1] = true;
-			}
-		}
-	}
-	for (size_t j = 0; j < num_cols; ++j) {
-		int max_height = -1;
-		for (size_t i = 0; i < num_rows; ++i) {
-			if (treemap[i][j] > max_height) {
-				max_height = treemap[i][j];
-				visible[i][j] = true;
-			}
-		}
-		max_height = -1;
-		for (size_t i = num_rows; i > 0; --i) {
-			if (treemap[i-1][j] > max_height) {
-				max_height = treemap[i-1][j];
-				visible[i-1][j] = true;
-			}
-		}
-	}
+	auto num_rows = chart_strs.size();
+	auto num_cols = chart_strs[0].size();
+
+    auto chart = std::valarray<char>(num_rows * num_cols);
+    for (std::size_t i = 0; i < num_rows; ++i) {
+        for (std::size_t j = 0; j < num_cols; ++j) {
+            chart[i * num_cols + j] = chart_strs[i][j];
+        }
+    }
+
+    auto visible = std::valarray<bool>(false, num_rows * num_cols);
+    auto regimes = std::array{
+        std::tuple{num_rows, num_cols, static_cast<size_t>(1), num_cols},
+        std::tuple{num_cols, num_rows, num_cols, static_cast<size_t>(1),},
+    };
+    for (auto [size, count, offset_mul, stride] : regimes) {
+        auto max_heights_pair = std::array{std::valarray<char>('\0', size), std::valarray<char>('\0', size)};
+        for (std::size_t ind = 0; ind < count; ++ind) {
+            auto js = std::array{ind, count - ind - 1};
+            for (auto&& [j, max_heights] : ranges::views::zip(js, max_heights_pair)) {
+                auto sl = std::slice(j * offset_mul, size, stride);
+                auto current_col = std::valarray(chart[sl]);
+                auto current_visible = current_col > max_heights;
+                visible[sl] = current_visible || visible[sl];
+
+                max_heights[current_visible] = current_col[current_visible];
+            }
+        }
+    }
 	int sum = 0;
-	for (size_t i = 0; i < num_rows; ++i) {
-		for (size_t j = 0; j < num_cols; ++j) {
-			sum += visible[i][j];
-		}
+	for (size_t i = 0; i < num_rows * num_cols; ++i) {
+			sum += visible[i];
 	}
 	std::cout << sum << std::endl;
 }
