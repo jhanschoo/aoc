@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <string>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
 
 void move_tail(auto &tail, auto &head) {
     auto &[x, y] = tail;
@@ -51,8 +46,8 @@ void move_tail(auto &tail, auto &head) {
 
 int main() {
     using ll = long long;
-    auto seen = std::set < std::pair < ll, ll>> {{ 0, 0 }};
-    auto rope = std::vector < std::pair < ll, ll>>(10, {0, 0});
+    auto seen = std::set{std::pair{0ll, 0ll}};
+    auto rope = std::array<std::pair<ll, ll>, 10>{std::pair{0ll, 0ll}};
     char direction;
     int steps;
     while (std::cin >> direction >> steps) {
@@ -68,6 +63,7 @@ int main() {
                     ++rope[0].first;
                     break;
                 case 'L':
+                default:
                     --rope[0].first;
                     break;
             }

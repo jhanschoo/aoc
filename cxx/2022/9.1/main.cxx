@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <string>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
 
 void move_tail(auto &tail, auto &head, auto &seen) {
     auto &[x, y] = tail;
@@ -69,6 +64,7 @@ int main() {
                     ++head.first;
                     break;
                 case 'L':
+                default:
                     --head.first;
                     break;
             }
