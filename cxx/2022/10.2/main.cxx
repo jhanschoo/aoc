@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <string>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
 
 void check_cycle(auto &cycle, auto &xval, auto &crt) {
     auto pixel = cycle % 40;
@@ -16,10 +11,9 @@ void check_cycle(auto &cycle, auto &xval, auto &crt) {
 }
 
 int main() {
-    using ll = long long;
-    int cycle = 0, xval = 1;
-    std::vector <std::vector<bool>> crt;
-    std::string op;
+    auto cycle = 0, xval = 1;
+    auto crt = std::vector<std::vector<bool>>{};
+    auto op = std::string{};
     while (std::cin >> op) {
         if (op == "noop") {
             check_cycle(cycle, xval, crt);
