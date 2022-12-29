@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <string>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
 
 int main() {
 	std::vector<std::string> treemap;
