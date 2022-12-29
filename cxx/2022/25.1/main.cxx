@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <string>
 #include <bits/stdc++.h>
-#include <ext/pb_ds/assoc_container.hpp>
 
 auto snafu_to_decimal(std::string_view snafu) {
     long long decimal = 0;
@@ -22,6 +17,7 @@ auto snafu_to_decimal(std::string_view snafu) {
                 decimal -= 1;
                 break;
             case '=':
+            default:
                 decimal -= 2;
                 break;
         }
@@ -50,6 +46,7 @@ auto decimal_to_snafu(long long i) {
                 i += 1;
                 break;
             case 0:
+            default:
                 snafu.push_back('=');
                 i += 2;
                 break;
@@ -60,10 +57,10 @@ auto decimal_to_snafu(long long i) {
 }
 
 int main() {
-    std::string line;
-    long long sum = 0;
+    auto line = std::string{};
+    auto sum = 0ll;
     while (std::cin >> line) {
         sum += snafu_to_decimal(line);
-        std::cout << sum << " " << decimal_to_snafu(sum) << std::endl;
     }
+    std::cout << sum << " " << decimal_to_snafu(sum) << std::endl;
 }
