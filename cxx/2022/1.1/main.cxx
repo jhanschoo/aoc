@@ -4,18 +4,18 @@ int main() {
     using namespace std;
 
     ios::sync_with_stdio(0);
-	cin.tie(0);
+    cin.tie(0);
 
     auto maximum = 0, current = 0;
     auto s = string{};
-	while (getline(cin, s)) {
+    while (getline(cin, s)) {
         if (s.empty()) {
             current = 0;
-		} else {
+        } else {
             current += stoi(s);
             maximum = max(current, maximum);
-			current = 0;
-		}
-	}
-	cout << maximum << endl;
+            current = 0;
+        }
+    }
+    cout << maximum << endl;
 }

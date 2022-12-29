@@ -2,10 +2,10 @@
 #include <range/v3/all.hpp>
 
 constexpr auto char_to_priority(char c) {
-	if (c <= 'Z') {
-		return c - 'A' + 27ll;
-	}
-	return c - 'a' + 1ll;
+    if (c <= 'Z') {
+        return c - 'A' + 27ll;
+    }
+    return c - 'a' + 1ll;
 }
 
 int main() {
@@ -20,6 +20,6 @@ int main() {
 
         sum += char_to_priority(intersection[0]);
     }
-	std::cout << sum << std::endl;
-	return 0;
+    std::cout << sum << std::endl;
+    return 0;
 }

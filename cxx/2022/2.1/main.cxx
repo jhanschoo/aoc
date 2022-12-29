@@ -8,12 +8,12 @@ auto compute_score(auto l, auto r) {
 }
 
 int main() {
-	std::ios::sync_with_stdio(0);
-	std::cin.tie(0);
+    std::ios::sync_with_stdio(0);
+    std::cin.tie(0);
     auto l = char{}, r = char{};
-	auto score = 0ll;
-	while (std::cin >> l >> r) {
-		score += compute_score(l, r);
-	}
-	std::cout << score << std::endl;
+    auto score = 0ll;
+    while (std::cin >> l >> r) {
+        score += compute_score(l, r);
+    }
+    std::cout << score << std::endl;
 }
