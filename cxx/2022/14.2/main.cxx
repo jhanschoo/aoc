@@ -13,20 +13,6 @@ std::istream &read_coords(std::istream &is, coords_t& p) {
     return is >> p.first >> comma >> p.second;
 }
 
-//std::vector<std::pair<int, int>> read_path(const std::string &path_str) {
-//    auto iss = std::istringstream{path_str};
-//    auto path = std::vector<std::pair<int, int>>{};
-//    // first
-//    path.emplace_back(0, 0);
-//    read_coords(iss, path.back());
-//    auto arrow = std::string{};
-//    while (iss >> arrow) {
-//        path.emplace_back(0, 0);
-//        read_coords(iss, path.back());
-//    }
-//    return path;
-//}
-
 void fill_edge(filled_t& filled, const coords_t &a, const coords_t &b) {
     if (a.first == b.first) {
         auto [x, y1, y2] = std::tuple{a.first, a.second, b.second};
@@ -54,60 +40,32 @@ void fill_path(filled_t& filled, const std::string &path_str) {
     }
 }
 
-//void print_filled(filled_t& filled) {
-//    auto [min_x, max_x] = ranges::minmax(filled | std::views::keys);
-//    auto [min_y, max_y] = ranges::minmax(filled | std::views::values);
-//    for (auto y : ranges::views::iota(min_y, max_y + 1)) {
-//        for (auto x : ranges::views::iota(min_x, max_x + 1)) {
-//            std::cout << (filled.contains({x, y}) ? '#' : '.');
-//        }
-//        std::cout << std::endl;
-//    }
-//}
-
-//void print_coords(const coords_t &p) {
-//    std::cout << p.first << ',' << p.second;
-//}
-
-std::optional<coords_t> drop_vertical(const filled_t& filled, const coords_t &current) {
-    auto below = filled.lower_bound(current);
-    if (below->first != current.first) {
-        return std::nullopt;
-    }
-    if (below == filled.end() || below->first != current.first) {
-        return std::nullopt;
-    }
-    return *below;
-}
-
-void drop_sand(filled_t& filled, const int &above_bedrock, std::vector<coords_t> &path_memo) {
-    coords_t prev{DUMMY}, curr;
-    while (filled.contains(curr = path_memo.back())) {
-        path_memo.pop_back();
-    }
-    while (curr != prev) {
-        prev = curr;
-        auto res = drop_vertical(filled, curr);
-        if (!res) {
-            filled.emplace(curr.first, above_bedrock);
-            return;
+std::vector<coords_t> &drop_sand(filled_t& filled, const int &above_bedrock, std::vector<coords_t> &path_memo) {
+    while (true) {
+        auto &[x, y] = path_memo.back();
+        if (y == above_bedrock) {
+            break;
         }
-        curr = *res;
-        --curr.second;
-        path_memo.push_back(curr);
-        auto diag_left = std::pair{curr.first - 1, curr.second + 1};
-        if (!filled.contains(diag_left)) {
-            curr = diag_left;
-            path_memo.push_back(curr);
+        auto next = coords_t{x, y + 1};
+        if (!filled.contains(next)) {
+            path_memo.push_back(next);
             continue;
         }
-        auto diag_right = std::pair{curr.first + 1, curr.second + 1};
-        if (!filled.contains(diag_right)) {
-            curr = diag_right;
-            path_memo.push_back(curr);
+        --next.first;
+        if (!filled.contains(next)) {
+            path_memo.push_back(next);
+            continue;
         }
+        next.first += 2;
+        if (!filled.contains(next)) {
+            path_memo.push_back(next);
+            continue;
+        }
+        break;
     }
-    filled.insert(curr);
+    filled.insert(path_memo.back());
+    path_memo.pop_back();
+    return path_memo;
 }
 
 int main() {
@@ -120,8 +78,7 @@ int main() {
     auto above_bedrock = ranges::max(filled | std::views::values) + 1;
     auto path_memo = std::vector<coords_t>{START};
     for (auto i : ranges::views::iota(1)) {
-        drop_sand(filled, above_bedrock, path_memo);
-        if (filled.contains(START)) {
+        if (drop_sand(filled, above_bedrock, path_memo).empty()) {
             std::cout << i << std::endl;
             return 0;
         }
