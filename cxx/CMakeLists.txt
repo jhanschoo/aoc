@@ -13,7 +13,7 @@ conan_basic_setup(TARGETS)
 set(aoc_default_libs tutorial_compiler_flags CONAN_PKG::range-v3)
 
 set(HARNESS_FILE "${CMAKE_BINARY_DIR}/harness.sh")
-file(WRITE "${HARNESS_FILE}" "exec $1 $2 < $2\n")
+file(WRITE "${HARNESS_FILE}" "exec \"$1\" \"$2\" < \"$2\"\n")
 
 
 include(CTest)
