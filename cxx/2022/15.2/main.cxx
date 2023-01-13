@@ -7,6 +7,29 @@ namespace {
     using coords_t = std::pair<ll, ll>;
 }
 
+/**
+ * A border object denotes a linear border of a region cleared by the sensor, be it
+ * the top-left, top-right, bottom-left, or bottom-right line. The coordinates that
+ * the line segment passes through are themselves cleared by the sensor (and moving one unit in two
+ * out of four directions will bring you to uncleared sections).
+ *
+ * `axis_point` is the y-coordinate at which the line segment, perhaps extended
+ * indefinitely, crosses the y-axis.
+ *
+ * `start` is the y-coordinate of the leftmost of the two points that bound the line segment, inclusive of the
+ * cleared region.
+ * `end` is the y-coordinates of the rightmost of the two points that bound the line segment, inclusive of the
+ * cleared region.
+ * Hence `start` is always less than or equal to `end`.
+ */
+// Note: x increases to the right, y increases downwards.
+struct border {
+    ll axis_point;
+    ll start;
+    ll end;
+    auto operator<=>(const border&) const = default;
+};
+
 std::istream &extract_coords(std::istream &is, coords_t &sensor, coords_t &beacon) {
     // \nSensor at x=
     return (((is.ignore(13) >> sensor.first)
@@ -27,50 +50,42 @@ int main() {
     std::cin >> target_y;
     std::string path_str;
     auto sensor = coords_t{}, beacon = coords_t{};
-    // tycr is target-y row's cleared region, consisting of a map of cleared segments, keyed by start, value is end inclusive.
-    auto tycr = std::map<ll, ll>{};
-    // tybp is target-y row's positions that contain a beacon. We know that tybps always lie in cleared regions.
-    auto tybp = std::set<ll>{};
+    std::vector<border> bl, ul, br, ur, codiags, contradiags;
     while (extract_coords(std::cin, sensor, beacon)) {
-        std::cout << "sensor: " << sensor.first << ',' << sensor.second << std::endl;
+        auto &[x, y] = sensor;
+        std::cout << "sensor: " << x << ',' << y << std::endl;
         std::cout << "beacon: " << beacon.first << ',' << beacon.second << std::endl;
-        if (beacon.second == target_y) {
-            tybp.insert(beacon.first);
-        }
-        beacon.first -= sensor.first;
+        beacon.first -= x;
         if (beacon.first < 0) { beacon.first = -beacon.first; }
-        beacon.second -= sensor.second;
+        beacon.second -= y;
         if (beacon.second < 0) { beacon.second = -beacon.second; }
         const auto distance = beacon.first + beacon.second;
-        const auto distance_y = target_y < sensor.second ? sensor.second - target_y : target_y - sensor.second;
-        const auto distance_wrt_y = distance - distance_y;
-        if (distance_wrt_y < 0) {
+        // note: leftmost cleared is (x - distance, y), rightmost is (x + distance, y)
+        //   topmost is (x, y - distance), bottommost (x, y + distance)
+        // bl y-intercept is y - (x - distance), ul y-intercept is y + (x - distance)
+        // br y-intercept is y + (x + distance), ur y-intercept is y - (x + distance)
+        bl.push_back(border{y - x + distance, y, y + distance});
+        ul.push_back(border{y + x - distance - 1, y - distance - 1, y - 1});
+        ur.push_back(border{y - x - distance - 1, y - distance - 1, y - 1});
+        br.push_back(border{y + x + distance, y, y + distance});
+    }
+    std::ranges::sort(bl);
+    std::ranges::sort(ul);
+    std::ranges::sort(ur);
+    std::ranges::sort(br);
+
+    // find appropriate codiags (these are the lines whose x and y coordinates are covariant).
+    std::optional<border> temp;
+    for (auto it = bl.begin(), subit = ur.begin(); it != bl.end(), subit != ur.end(); *it < *subit ? ++it : ++subit) {
+        if (it->axis_point != subit->axis_point) {
             continue;
         }
-        const auto target_y_left_incl = sensor.first - distance_wrt_y;
-        const auto target_y_right_incl = sensor.first + distance_wrt_y;
-        if (tycr.contains(target_y_left_incl)) {
-            tycr[target_y_left_incl] = std::max(tycr[target_y_left_incl], target_y_right_incl);
-        } else {
-            tycr[target_y_left_incl] = target_y_right_incl;
-        }
-        std::cout << "d: " << distance << ", d_y: " << distance_y << ", dw_y: " << distance_wrt_y << ", l: " << target_y_left_incl << ", r: " << target_y_right_incl << std::endl;
-    }
-    if (tycr.empty()) {
-        std::cout << 0 << std::endl;
-        return 0;
-    }
-    const auto &prev = *tycr.begin();
-    auto occupied = static_cast<ull>(prev.second - prev.first + 1);
-    auto prev_right = prev.second;
-    for (auto &[start, right] : tycr) {
-        auto left = (start <= prev_right) ? prev_right + 1 : start;
-        if (left > right) {
+        auto overlap = border{it->axis_point, std::max(it->start, subit->start), std::min(it->end, subit->end)};
+        if (temp->start > temp->end) {
+            // illegal segment
             continue;
         }
-        occupied += right - left + 1;
-        prev_right = right;
+
     }
-    occupied -= tybp.size();
-    std::cout << occupied << std::endl;
+    //
 }
