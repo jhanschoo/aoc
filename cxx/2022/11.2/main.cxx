@@ -65,7 +65,7 @@ void process_test() {
             std::vector{ 76ull, 86ull, 83ull, 55ull, },
     };
     auto test_inspections = std::array{ 0ull, 0ull, 0ull, 0ull, 0ull, 0ull, 0ull, 0ull, };
-    for (auto rounds = 0; rounds < NUM_ROUNDS; ++rounds) {
+    for (auto rounds = 0u; rounds < NUM_ROUNDS; ++rounds) {
         for (auto monkey = 0u; monkey < TEST_MONKEYS; ++monkey) {
             auto& items = test_state[monkey];
             for (auto& item : items) {
@@ -92,7 +92,7 @@ void process_diagnostic() {
             std::vector{ 74ull },
     };
     auto diagnostic_inspections = std::array{ 0ull, 0ull, 0ull, 0ull };
-    for (auto rounds = 0; rounds < NUM_ROUNDS; ++rounds) {
+    for (auto rounds = 0u; rounds < NUM_ROUNDS; ++rounds) {
         for (auto monkey = 0u; monkey < DIAGNOSTIC_MONKEYS; ++monkey) {
             auto& items = diagnostic_state[monkey];
             for (auto& item : items) {
