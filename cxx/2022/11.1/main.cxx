@@ -6,7 +6,7 @@ namespace {
 
     constexpr auto DIAGNOSTIC_MONKEYS = 4u;
 
-    constexpr auto NUM_ROUNDS = 20u;
+    constexpr auto NUM_ROUNDS = 20;
 
     constexpr auto DIAGNOSTIC_OPS = std::array{
             +[](lli old) { return old * 19; },

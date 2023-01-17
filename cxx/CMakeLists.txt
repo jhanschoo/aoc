@@ -10,6 +10,7 @@ target_compile_options(tutorial_compiler_flags INTERFACE "-Wall")
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(aoc_default_libs tutorial_compiler_flags CONAN_PKG::range-v3)
 
 set(HARNESS_FILE "${CMAKE_BINARY_DIR}/harness.sh")
