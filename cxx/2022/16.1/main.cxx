@@ -87,17 +87,7 @@ auto parse(std::istream &is) {
         }
         ++i;
     }
-    for (auto idx: ranges::views::iota(SIZE_ZERO, openable_num)) {
-        std::cout << idx << ": ";
-        for (auto jdx: ranges::views::iota(SIZE_ZERO, openable_num)) {
-            std::cout << pruned_gaps[idx * openable_num + jdx] << ' ';
-        }
-        std::cout << std::endl;
-    }
     auto rates = rates_map | ranges::view::values | ranges::to<std::vector>();
-    for (auto idx: ranges::views::iota(SIZE_ZERO, openable_num)) {
-        std::cout << idx << ": " << rates[idx] << std::endl;
-    }
     return std::pair{rates, pruned_gaps};
 }
 
@@ -132,35 +122,20 @@ int main() {
         return distance + move_for_n(0, num_mins);
     };
 
-    auto print_queue = [](auto &queue) {
-        while (!queue.empty()) {
-            auto [distance, ts, valve, opened, gas, path] = queue.top();
-            std::cout << distance << ' ' << ts << ' ' << gas << ": ";
-            for (const auto &[valve, ts, gas] : path) {
-                std::cout << valve << ' ' << ts << ' ' << gas << ", ";
-            }
-            std::cout << std::endl;
-            queue.pop();
-        }
-    };
-
     using state_t = std::tuple<
             ll, // distance
             ll, // timestamp
             std::size_t, // current node
-            boost::dynamic_bitset<unsigned long, std::allocator<unsigned long>>, // bitmap of all bits
-            ll, // unbiased gas
-            std::vector<std::tuple<std::size_t, ll, ll>> // path
+            boost::dynamic_bitset<unsigned long, std::allocator<unsigned long>> // bitmap of all opened valves
     >;
     auto queue = std::priority_queue<state_t>{};
     auto starting_opened = boost::dynamic_bitset{num_valves};
     starting_opened[0] = true;
-    queue.emplace(0, 0, 0, starting_opened, 0, std::vector<std::tuple<std::size_t, ll, ll>>{});
+    queue.emplace(0, 0, 0, starting_opened);
     while (!queue.empty()) {
-        auto [distance, ts, valve, opened, gas, path] = queue.top();
+        auto [distance, ts, valve, opened] = queue.top();
         if (ts == num_mins) {
-            std::cout << distance << ' ' << unbias_distance(distance) << std::endl;
-            print_queue(queue);
+            std::cout << unbias_distance(distance) << std::endl;
             return 0;
         }
         queue.pop();
@@ -179,14 +154,12 @@ int main() {
                     has_idle = true;
                     continue;
                 }
-                auto next_gas = gas + rates[next_valve] * ((num_mins - 1) - ts - gap);
-                auto next_path = path;
-                next_path.emplace_back(next_valve, next_ts, next_gas);
-                queue.emplace(distance - move_for_n(ts, gap) - open_at_n(ts + gap, rates[next_valve]), next_ts, next_valve, next_opened, next_gas, next_path);
+                queue.emplace(distance - move_for_n(ts, gap) - open_at_n(ts + gap, rates[next_valve]), next_ts,
+                              next_valve, next_opened);
             }
         }
         if (has_idle) {
-            queue.emplace(distance - move_for_n(ts, num_mins - ts), num_mins, valve, opened, gas, path);
+            queue.emplace(distance - move_for_n(ts, num_mins - ts), num_mins, valve, opened);
         }
     }
 }
