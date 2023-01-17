@@ -5,6 +5,9 @@
 namespace {
     using ll = long long;
     using ull = unsigned long long;
+    using dbitset = boost::dynamic_bitset<unsigned long, std::allocator<unsigned long>>;
+    // bool denotes if we're traversing down or up the DFS
+    using state_t = std::pair<std::size_t, bool>;
 
     constexpr auto MAX_STREAMSIZE = std::numeric_limits<std::streamsize>::max();
     constexpr auto SIZE_ZERO = std::size_t{0};
@@ -38,7 +41,7 @@ auto parse(std::istream &is) {
     auto ident_vec = neighbors_map | ranges::views::keys | ranges::to<std::vector>();
     auto reverse_map = ranges::views::zip(ident_vec, ranges::views::iota(SIZE_ZERO)) |
                        ranges::to<std::map<std::string, ll>>();
-    auto neighbors_arr = boost::dynamic_bitset(valves_num * valves_num);
+    auto neighbors_arr = dbitset(valves_num * valves_num);
     for (const auto &[valve, neighbors]: neighbors_map) {
         const auto valve_idx = reverse_map[valve];
         for (const auto &neighbor: neighbors) {
@@ -48,7 +51,7 @@ auto parse(std::istream &is) {
     }
     auto gaps = std::valarray<ll>(valves_num * valves_num);
     for (auto idx: ranges::views::iota(SIZE_ZERO, valves_num)) {
-        auto scheduled = boost::dynamic_bitset(valves_num);
+        auto scheduled = dbitset(valves_num);
         auto frontier = std::vector<std::size_t>{idx};
         scheduled[idx] = true;
         auto gap = ll{0};
@@ -87,121 +90,102 @@ auto parse(std::istream &is) {
         }
         ++i;
     }
-//    for (auto idx: ranges::views::iota(SIZE_ZERO, openable_num)) {
-//        std::cout << idx << ": ";
-//        for (auto jdx: ranges::views::iota(SIZE_ZERO, openable_num)) {
-//            std::cout << pruned_gaps[idx * openable_num + jdx] << ' ';
-//        }
-//        std::cout << std::endl;
-//    }
     auto rates = rates_map | ranges::view::values | ranges::to<std::vector>();
-//    for (auto idx: ranges::views::iota(SIZE_ZERO, openable_num)) {
-//        std::cout << idx << ": " << rates[idx] << std::endl;
-//    }
     return std::pair{rates, pruned_gaps};
 }
 
-// Note: the diagnostic.txt and input.txt for 15.1 have a line prepended that denotes the y-coordinate that we are interested in.
+auto open_at_ts_minus_1(auto ts, auto rate) {
+    return rate * (num_mins - ts);
+}
+
 int main() {
     auto [rates, gaps] = parse(std::cin);
     auto num_valves = rates.size();
-    auto max_rate = std::ranges::max(rates);
-    /**
-     * Precondition: ts + n < num_mins
-     *
-     * if you move during [ts, ts + n), you are forfeiting opening the max_rate valve during that period,
-     * and forfeiting opening the max_rate valve during [x, x+1) for x=ts, ..., ts + n - 1.
-     * if you were to open the max_rate valve at [x, x+1), then the max_rate would release
-     * max_rate * (num_mins - (x+1)) amount of gas.
-     *
-     *   Sum(x=ts..ts+n-1)[max_rate * (num_mins - (x+1))]
-     *   = max_rate * [n * {num_mins-(ts+1) + num_mins - (ts+n)})]/2
-     */
-    auto move_for_n = [&max_rate](auto ts, auto n) {
-        return max_rate * (n * ((num_mins + num_mins - 1) - ts - ts - n)) / 2;
-    };
-    /**
-     * opening the valve during [ts, ts + 1). Our distance increases by
-     * (max_rate - rate) * (num_mins - ts - 1)
-     */
-    auto open_at_n = [&max_rate](auto ts, auto rate) {
-        return (max_rate - rate) * ((num_mins - 1) - ts);
-    };
-
-    auto unbias_distance = [&move_for_n](auto distance) {
-        return distance + move_for_n(0, num_mins) * 2;
-    };
-
-    using state_t = std::tuple<
-            ll, // distance
-            ll, // human timestamp
-            ll, // elephant timestamp
-            std::size_t, // human node
-            std::size_t, // elephant node
-            boost::dynamic_bitset<unsigned long, std::allocator<unsigned long>> // bitmap of all bits
-    >;
-    auto queue = std::priority_queue<state_t>{};
-    auto starting_opened = boost::dynamic_bitset{num_valves};
-    starting_opened[0] = true;
-    queue.emplace(0, 0, 0, 0, 0, starting_opened);
-    auto bias = unbias_distance(0);
-    auto old_distance = 0ll;
-    while (!queue.empty()) {
-        const auto [distance, human_ts, elephant_ts, human_valve, elephant_valve, opened] = queue.top();
-        if (distance != old_distance) {
-            std::cout << bias + distance << std::endl;
-            old_distance = distance;
-        }
-        if (human_ts == num_mins && elephant_ts == num_mins) {
-            std::cout << distance << ' ' << unbias_distance(distance) << std::endl;
-            return 0;
-        }
-        queue.pop();
-        auto can_open = false;
-        for (auto next_valve: ranges::views::iota(SIZE_ZERO + 1, num_valves)) {
-            if (opened[next_valve]) {
+    auto flow_memo = std::map<dbitset, ll>{};
+    {
+        /**
+         * opening the valve during [ts - 1, ts). Our flow increases by
+         * rate * (num_mins - ts)
+         */
+        auto unvisited = ~dbitset{num_valves};
+        unvisited[0] = false;
+        auto ts = ll{0}, flow = ll{0};
+        auto last_visited = std::size_t{0};
+        auto path = std::vector<std::size_t>{0};
+        while (true) {
+            decltype(unvisited.find_first()) next;
+            // Handle initial arrival on this node
+            if (last_visited == path.back()) {
+                // Update max flow for explored path
+                flow_memo[unvisited] = std::max(flow_memo[unvisited], flow);
+                next = unvisited.find_first();
+            } else {
+                next = unvisited.find_next(last_visited);
+            }
+            while (next != dbitset::npos && ts + gaps[path.back() * num_valves + next] + 1 >= num_mins) {
+                next = unvisited.find_next(next);
+            }
+            // Handle traversing up the DFS
+            if (next == dbitset::npos) {
+                unvisited[path.back()] = true;
+                flow -= open_at_ts_minus_1(ts, rates[path.back()]);
+                last_visited = path.back();
+                path.pop_back();
+                if (path.empty()) {
+                    break;
+                }
+                ts -= gaps[path.back() * num_valves + last_visited] + 1;
                 continue;
+                // Handle traversing down the DFS
+            } else {
+                ts = ts + gaps[path.back() * num_valves + next] + 1;
+                path.push_back(next);
+                last_visited = next;
+                flow += open_at_ts_minus_1(ts, rates[next]);
+                unvisited[next] = false;
             }
-            auto human_gap = gaps[human_valve * num_valves + next_valve],
-                    elephant_gap = gaps[elephant_valve * num_valves + next_valve];
-            auto next_human_ts = human_ts + human_gap + 1,
-                    next_elephant_ts = elephant_ts + elephant_gap + 1;
-            // equality case: if we can open the valve at num_mins - 1, choose not to open the valve.
-            if (next_human_ts >= num_mins && next_elephant_ts >= num_mins) {
-                continue;
-            }
-            auto next_opened = opened;
-            next_opened[next_valve] = can_open = true;
-            if (next_human_ts < num_mins) {
-                queue.emplace(
-                        distance - move_for_n(human_ts, human_gap) - open_at_n(human_ts + human_gap, rates[next_valve]),
-                        next_human_ts,
-                        elephant_ts,
-                        next_valve,
-                        elephant_valve,
-                        next_opened
-                );
-            }
-            if (next_elephant_ts < num_mins) {
-                queue.emplace(
-                        distance - move_for_n(elephant_ts, elephant_gap) - open_at_n(elephant_ts + elephant_gap, rates[next_valve]),
-                        human_ts,
-                        next_elephant_ts,
-                        human_valve,
-                        next_valve,
-                        next_opened
-                );
-            }
-        }
-        if (!can_open) {
-            queue.emplace(
-                    distance - move_for_n(human_ts, num_mins - human_ts) - move_for_n(elephant_ts, num_mins - elephant_ts),
-                    num_mins,
-                    num_mins,
-                    human_valve,
-                    elephant_valve,
-                    opened
-            );
         }
     }
+    auto max_flow = ll{0};
+    for (const auto &[unvisited_original, flow_original]: flow_memo) {
+        auto unvisited = unvisited_original;
+        auto flow = flow_original;
+        auto ts = ll{0};
+        auto last_visited = std::size_t{0};
+        auto path = std::vector<std::size_t>{0};
+        while (true) {
+            decltype(unvisited.find_first()) next;
+            // Handle initial arrival on this node
+            if (last_visited == path.back()) {
+                // Update max flow
+                max_flow = std::max(max_flow, flow);
+                next = unvisited.find_first();
+            } else {
+                next = unvisited.find_next(last_visited);
+            }
+            while (next != dbitset::npos && ts + gaps[path.back() * num_valves + next] + 1 >= num_mins) {
+                next = unvisited.find_next(next);
+            }
+            // Handle traversing up the DFS
+            if (next == dbitset::npos) {
+                unvisited[path.back()] = true;
+                flow -= open_at_ts_minus_1(ts, rates[path.back()]);
+                last_visited = path.back();
+                path.pop_back();
+                if (path.empty()) {
+                    break;
+                }
+                ts -= gaps[path.back() * num_valves + last_visited] + 1;
+                continue;
+                // Handle traversing down the DFS
+            } else {
+                ts = ts + gaps[path.back() * num_valves + next] + 1;
+                path.push_back(next);
+                last_visited = next;
+                flow += open_at_ts_minus_1(ts, rates[next]);
+                unvisited[next] = false;
+            }
+        }
+    }
+    std::cout << max_flow << std::endl;
 }
