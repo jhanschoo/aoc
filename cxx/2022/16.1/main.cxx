@@ -133,32 +133,29 @@ int main() {
     starting_opened[0] = true;
     queue.emplace(0, 0, 0, starting_opened);
     while (!queue.empty()) {
-        auto [distance, ts, valve, opened] = queue.top();
+        const auto [distance, ts, valve, opened] = queue.top();
         if (ts == num_mins) {
             std::cout << unbias_distance(distance) << std::endl;
             return 0;
         }
         queue.pop();
-        auto has_idle = opened.all();
-        if (!opened.all()) {
-            for (auto next_valve: ranges::views::iota(SIZE_ZERO + 1, num_valves)) {
-                if (opened[next_valve]) {
-                    continue;
-                }
-                auto next_opened = opened;
-                next_opened[next_valve] = true;
-                auto gap = gaps[valve * num_valves + next_valve];
-                auto next_ts = ts + gap + 1;
-                // equality case: if we can open the valve at num_mins - 1, choose not to open the valve.
-                if (next_ts >= num_mins) {
-                    has_idle = true;
-                    continue;
-                }
-                queue.emplace(distance - move_for_n(ts, gap) - open_at_n(ts + gap, rates[next_valve]), next_ts,
-                              next_valve, next_opened);
+        auto can_open = false;
+        for (auto next_valve: ranges::views::iota(SIZE_ZERO + 1, num_valves)) {
+            if (opened[next_valve]) {
+                continue;
             }
+            auto gap = gaps[valve * num_valves + next_valve];
+            auto next_ts = ts + gap + 1;
+            // equality case: if we can open the valve at num_mins - 1, choose not to open the valve.
+            if (next_ts >= num_mins) {
+                continue;
+            }
+            auto next_opened = opened;
+            next_opened[next_valve] = can_open = true;
+            queue.emplace(distance - move_for_n(ts, gap) - open_at_n(ts + gap, rates[next_valve]), next_ts,
+                          next_valve, next_opened);
         }
-        if (has_idle) {
+        if (!can_open) {
             queue.emplace(distance - move_for_n(ts, num_mins - ts), num_mins, valve, opened);
         }
     }
