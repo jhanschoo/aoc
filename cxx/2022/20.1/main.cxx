@@ -4,70 +4,56 @@
 namespace {
     using ll = long long;
     using ull = unsigned long long;
-    using coords_t = std::pair<ll, ll>;
 }
 
-std::istream &extract_coords(std::istream &is, coords_t &sensor, coords_t &beacon) {
-    // \nSensor at x=
-    return (((is.ignore(13) >> sensor.first)
-    // , y=
-            .ignore(4)
-            >> sensor.second)
-            // : closest beacon is at x=
-            .ignore(25)
-            >> beacon.first)
-            // , y=
-            .ignore(4)
-            >> beacon.second;
-}
+template <typename T>
+class AVLTree {
+public:
+private:
+    struct Node {
+        std::shared_ptr<Node> left, right;
+        int balance;
+        std::size_t ind;
+        T value;
+    };
+    std::shared_ptr<Node> root;
 
-// Note: the diagnostic.txt and input.txt for 15.1 have a line prepended that denotes the y-coordinate that we are interested in.
+    void insert(T value, std::size_t ind) {
+        if (!root) {
+            root = std::make_shared<Node>(Node{nullptr, nullptr, 0, 0, value});
+            return;
+        }
+        auto current = root;
+        auto ancestors = std::vector<std::shared_ptr<Node>>{};
+        while (true) {
+            // If our index is not greater than the current node's index, we insert in the left subtree;
+            // if the left subtree is empty, then we have current->ind == ind.
+            ancestors.push_back(current);
+            if (ind <= current->ind) {
+                ++(current->ind);
+                if (!current->left) {
+                    current->left = std::make_shared<Node>(Node{nullptr, nullptr, 0, ind, value});
+                    ancestors.push_back(current->left);
+                    break;
+                }
+                current = current->left;
+            } else {
+                if (!current->right) {
+                    current->right = std::make_shared<Node>(Node{nullptr, nullptr, 0, current->ind + 1, value});
+                    ancestors.push_back(current->right);
+                    break;
+                }
+            }
+        }
+    }
+};
+
 int main() {
-    auto target_y = 0ll;
-    std::cin >> target_y;
-    std::string path_str;
-    auto sensor = coords_t{}, beacon = coords_t{};
-    // tycr is target-y row's cleared region, consisting of a map of cleared segments, keyed by start, value is end inclusive.
-    auto tycr = std::map<ll, ll>{};
-    // tybp is target-y row's positions that contain a beacon. We know that tybps always lie in cleared regions.
-    auto tybp = std::set<ll>{};
-    while (extract_coords(std::cin, sensor, beacon)) {
-        if (beacon.second == target_y) {
-            tybp.insert(beacon.first);
-        }
-        beacon.first -= sensor.first;
-        if (beacon.first < 0) { beacon.first = -beacon.first; }
-        beacon.second -= sensor.second;
-        if (beacon.second < 0) { beacon.second = -beacon.second; }
-        const auto distance = beacon.first + beacon.second;
-        const auto distance_y = target_y < sensor.second ? sensor.second - target_y : target_y - sensor.second;
-        const auto distance_wrt_y = distance - distance_y;
-        if (distance_wrt_y < 0) {
-            continue;
-        }
-        const auto target_y_left_incl = sensor.first - distance_wrt_y;
-        const auto target_y_right_incl = sensor.first + distance_wrt_y;
-        if (tycr.contains(target_y_left_incl)) {
-            tycr[target_y_left_incl] = std::max(tycr[target_y_left_incl], target_y_right_incl);
-        } else {
-            tycr[target_y_left_incl] = target_y_right_incl;
-        }
+    auto numbers = std::vector<int>{};
+    ranges::copy(std::istream_iterator<int>(std::cin), std::istream_iterator<int>(), ranges::back_inserter(numbers));
+    auto num_numbers = static_cast<int>(numbers.size());
+    std::cout << numbers.size() << std::endl;
+    for (auto n: numbers) {
+        std::cout << n << ' ' << n % num_numbers << std::endl;
     }
-    if (tycr.empty()) {
-        std::cout << 0 << std::endl;
-        return 0;
-    }
-    const auto &prev = *tycr.begin();
-    auto occupied = static_cast<ull>(prev.second - prev.first + 1);
-    auto prev_right = prev.second;
-    for (auto &[start, right] : tycr) {
-        auto left = (start <= prev_right) ? prev_right + 1 : start;
-        if (left > right) {
-            continue;
-        }
-        occupied += right - left + 1;
-        prev_right = right;
-    }
-    occupied -= tybp.size();
-    std::cout << occupied << std::endl;
 }
