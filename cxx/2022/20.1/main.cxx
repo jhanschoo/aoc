@@ -27,31 +27,70 @@ private:
         // parent_left_idx accumulates the number of nodes that contribute to the current node's index that
         // are not in the left subtree of the current node
         auto parent_left_idx = std::size_t{0};
-        auto current = root;
-        auto ancestors = std::vector<std::shared_ptr<Node>>{current};
-        while (true) {
-            // we know that we are going to insert into a child of current
-            ++(current->sz);
-            auto current_idx = parent_left_idx + (current->left ? current->left->sz : 0);
-            // If our index is lte to the current node's index, we insert in the left subtree; hence
-            if (idx <= current_idx) {
-                // note no update of parent_left_idx
-                // if the left subtree is empty, then we make a leaf node.
-                if (!current->left) {
-                    current->left = leaf_node;
+        auto ancestors = std::vector<std::shared_ptr<Node>>{root};
+        {
+            auto current = root;
+            while (true) {
+                // we know that we are going to insert into a child of current
+                ++(current->sz);
+                auto current_idx = parent_left_idx + (current->left ? current->left->sz : 0);
+                // If our index is lte to the current node's index, we insert in the left subtree; hence
+                if (idx <= current_idx) {
+                    // note no update of parent_left_idx
+                    // case where left subtree is empty, then we make a leaf node.
+                    if (!current->left) {
+                        current->left = leaf_node;
+                        ancestors.push_back(current->left);
+                        break;
+                    }
+                    current = current->left;
                     ancestors.push_back(current->left);
-                    break;
-                }
-                current = current->left;
-            } else {
-                // update current node's balance
-                current->balance += 1;
-                parent_left_idx = current_idx;
-                if (!current->right) {
-                    current->right = leaf_node;
+                } else {
+                    // Suppose that current's idx is 5, and current->right->left->sz is 3. Then, current->right's idx is 5 + 1 + 3 = 9.
+                    // Intuition to the + 1 is that we want to convert from 0-based indexing of the last element to sizes.
+                    parent_left_idx = current_idx + 1;
+                    // case where right subtree is empty, then we make a leaf node.
+                    if (!current->right) {
+                        current->right = leaf_node;
+                        ancestors.push_back(current->right);
+                        break;
+                    }
+                    current = current->right;
                     ancestors.push_back(current->right);
-                    break;
                 }
+            }
+        }
+        // ancestors contains the path from the root to the newly inserted node.
+        // Note that `ancestors.size()` is at least 2, since we always insert into a descendent of the root.
+        for (auto parent = ancestors.back(); i > 0; --i) {
+
+            auto &current = ancestors[i];
+            auto &parent = ancestors[i - 1];
+            if (parent->left == current) {
+                --(parent->balance);
+            } else {
+                ++(parent->balance);
+            }
+            if (parent->balance == 0) {
+                break;
+            }
+            if (parent->balance == -2) {
+                if (current->balance == 1) {
+                    // left-right case
+                    rotate_left(current);
+                }
+                // left-left case
+                rotate_right(parent);
+                break;
+            }
+            if (parent->balance == 2) {
+                if (current->balance == -1) {
+                    // right-left case
+                    rotate_right(current);
+                }
+                // right-right case
+                rotate_left(parent);
+                break;
             }
         }
     }
