@@ -13,33 +13,42 @@ private:
     struct Node {
         std::shared_ptr<Node> left, right;
         int balance;
-        std::size_t ind;
+        std::size_t sz;
         T value;
     };
     std::shared_ptr<Node> root;
 
-    void insert(T value, std::size_t ind) {
+    void insert(T value, std::size_t idx) {
+        auto leaf_node = std::make_shared<Node>(nullptr, nullptr, 0, 1, value);
         if (!root) {
-            root = std::make_shared<Node>(Node{nullptr, nullptr, 0, 0, value});
+            root = leaf_node;
             return;
         }
+        // parent_left_idx accumulates the number of nodes that contribute to the current node's index that
+        // are not in the left subtree of the current node
+        auto parent_left_idx = std::size_t{0};
         auto current = root;
-        auto ancestors = std::vector<std::shared_ptr<Node>>{};
+        auto ancestors = std::vector<std::shared_ptr<Node>>{current};
         while (true) {
-            // If our index is not greater than the current node's index, we insert in the left subtree;
-            // if the left subtree is empty, then we have current->ind == ind.
-            ancestors.push_back(current);
-            if (ind <= current->ind) {
-                ++(current->ind);
+            // we know that we are going to insert into a child of current
+            ++(current->sz);
+            auto current_idx = parent_left_idx + (current->left ? current->left->sz : 0);
+            // If our index is lte to the current node's index, we insert in the left subtree; hence
+            if (idx <= current_idx) {
+                // note no update of parent_left_idx
+                // if the left subtree is empty, then we make a leaf node.
                 if (!current->left) {
-                    current->left = std::make_shared<Node>(Node{nullptr, nullptr, 0, ind, value});
+                    current->left = leaf_node;
                     ancestors.push_back(current->left);
                     break;
                 }
                 current = current->left;
             } else {
+                // update current node's balance
+                current->balance += 1;
+                parent_left_idx = current_idx;
                 if (!current->right) {
-                    current->right = std::make_shared<Node>(Node{nullptr, nullptr, 0, current->ind + 1, value});
+                    current->right = leaf_node;
                     ancestors.push_back(current->right);
                     break;
                 }
