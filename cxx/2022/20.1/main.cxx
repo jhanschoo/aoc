@@ -152,24 +152,38 @@ public:
                 }
                 // now we have the predecessor
                 auto &predecessor = ancestors.back().get();
-                std::cout << "swap initiated" << std::endl;
+                auto &predecessor_ref = *predecessor, &target_ref = *target;
                 debug_print();
-                auto &target_ref = *target;
-                auto &predecessor_ref = *predecessor;
-                // we perform an actual swap of target and predecessor
-                auto left = std::move(target_ref.left);
-                auto right = std::move(target_ref.right);
-                target_ref.left = std::move(predecessor_ref.left);
-                target_ref.right = std::move(predecessor_ref.right);
+                std::cout << "1" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                auto target_left = std::move(target_ref.left);
+                std::cout << "2" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                auto target_right = std::move(target_ref.right);
+                std::cout << "3" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                auto predecessor_left = std::move(predecessor_ref.left);
+                std::cout << "4" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                auto predecessor_right = std::move(predecessor_ref.right);
+                std::cout << "5" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
                 std::swap(target_ref.balance, predecessor_ref.balance);
+                std::cout << "6" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
                 std::swap(target_ref.sz, predecessor_ref.sz);
-                std::swap(target, predecessor);
-                predecessor_ref.left = std::move(left);
-                predecessor_ref.right = std::move(right);
-                // we delete the predecessor
-                predecessor = std::move(predecessor->left);
-                std::cout << "swap completed" << std::endl;
+                std::cout << "7" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+
+                // target will be in predecessor's subtree so we splice target back first to avoid
+                // losing the unique_ptr to it
+                target_ref.left = std::move(predecessor_left);
+                std::cout << "8" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                target_ref.right = std::move(predecessor_right);
+                std::cout << "9" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                predecessor_ref.left = std::move(target_left);
+                std::cout << "10" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+                predecessor_ref.right = std::move(target_right);
+                std::cout << "11" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
+
+                // we delete the target, now spliced into a leaf node
+//                target = std::move(target->left);
+                std::cout << "12" << "predecessor: " << predecessor_ref.value << ", target: " << target_ref.value << std::endl;
                 debug_print();
+                ;
             }
         }
         // We now perform the rotations to restore the balance of the tree.
@@ -409,15 +423,22 @@ private:
         parent->balance = 0;
     }
 
-    static void debug_print_subtree(const std::unique_ptr<Node> &node) {
+    static void debug_print_subtree(const std::unique_ptr<Node> &node, std::size_t depth = 0) {
+        for ([[maybe_unused]] auto i_ : ranges::views::iota(std::size_t{0}, depth)) {
+            std::cout << "  ";
+        }
         if (!node) {
             std::cout << "[]";
             return;
         }
-        std::cout << "[" << node->value << ", " << static_cast<int>(node->balance) << ", " << node->sz << ", ";
-        debug_print_subtree(node->left);
-        std::cout << ", ";
-        debug_print_subtree(node->right);
+        std::cout << "[" << node->value << ", " << static_cast<int>(node->balance) << ", " << node->sz << "," << std::endl;
+        debug_print_subtree(node->left, depth + 2);
+        std::cout << ", " << std::endl;
+        debug_print_subtree(node->right, depth + 2);
+        std::cout << ", " << std::endl;
+        for ([[maybe_unused]] auto i_ : ranges::views::iota(std::size_t{0}, depth)) {
+            std::cout << "  ";
+        }
         std::cout << "]";
     }
 };
@@ -441,6 +462,7 @@ int main() {
         t.debug_print();
     }
 
+    t.erase(t.size() / 2);
     while (!t.empty()) {
         t.erase(t.size() / 2);
         t.debug_print();
