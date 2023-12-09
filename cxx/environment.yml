@@ -1,0 +1,6 @@
+name: conan
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - conan
