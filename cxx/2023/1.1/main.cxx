@@ -1,21 +1,18 @@
 #include <bits/stdc++.h>
 
+auto DIGITS = "0123456789";
+
 int main() {
-    using namespace std;
-
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-
-    auto maximum = 0, current = 0;
-    auto s = string{};
-    while (getline(cin, s)) {
-        if (s.empty()) {
-            current = 0;
-        } else {
-            current += stoi(s);
-            maximum = max(current, maximum);
-            current = 0;
+    auto line = std::string{};
+    auto sum = 0;
+    while (getline(std::cin, line)) {
+        auto left = line.find_first_of(DIGITS);
+        if (left == std::string::npos) {
+            continue;
         }
+        auto right = line.find_last_of(DIGITS);
+        auto num = (line[left] - '0') * 10 + (line[right] - '0');
+        sum += num;
     }
-    cout << maximum << endl;
+    std::cout << sum << std::endl;
 }
